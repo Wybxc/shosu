@@ -28,8 +28,3 @@ flutter:
   assets:
     - assets/images/
     - assets/audio/
-  
-  fonts:
-    - family: NotoSans
-      fonts:
-        - asset: fonts/NotoSans-Regular.ttf

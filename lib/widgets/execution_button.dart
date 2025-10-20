@@ -105,7 +105,8 @@ class _ExecutionButtonState extends State<ExecutionButton>
     try {
       final hasVibrator = await Vibration.hasVibrator() ?? false;
       if (hasVibrator) {
-        await Vibration.vibrate(duration: 100, repeat: 0);
+        // Vibrate with pattern: wait 0ms, vibrate 100ms, repeat
+        await Vibration.vibrate(pattern: [0, 100], repeat: 0);
       }
     } catch (e) {
       debugPrint('Error starting vibration: $e');
