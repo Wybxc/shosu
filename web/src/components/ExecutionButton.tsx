@@ -37,7 +37,7 @@ const ExecutionButton: React.FC<ExecutionButtonProps> = ({
     if (timeSinceLastTap < 300 && fillProgress > 0) {
       // Reset on double tap
       if (fillAnimationRef.current) {
-        clearInterval(fillAnimationRef.current);
+        cancelAnimationFrame(fillAnimationRef.current);
         fillAnimationRef.current = null;
       }
       setFillProgress(0);
@@ -53,34 +53,40 @@ const ExecutionButton: React.FC<ExecutionButtonProps> = ({
     setIsPressed(true);
     onPressStart();
     
+    // Clear any existing animation
+    if (fillAnimationRef.current) {
+      cancelAnimationFrame(fillAnimationRef.current);
+      fillAnimationRef.current = null;
+    }
+    
     // Start scale animation
     scaleControls.start({ scale: 0.94, transition: { duration: 0.15 } });
     
     // Start sound
     soundUtils.playHoldSound();
     
-    // Start fill animation
+    // Start fill animation using requestAnimationFrame
     pressStartTime.current = Date.now();
     const fillDuration = 5500; // 5.5 seconds
-    const updateInterval = 16; // ~60fps
     
-    fillAnimationRef.current = setInterval(() => {
+    const animate = () => {
       const elapsed = Date.now() - pressStartTime.current;
       const progress = Math.min(elapsed / fillDuration, 1);
       
       setFillProgress(progress);
       
       if (progress >= 1) {
-        if (fillAnimationRef.current) {
-          clearInterval(fillAnimationRef.current);
-          fillAnimationRef.current = null;
-        }
+        fillAnimationRef.current = null;
         setFilled(true);
         soundUtils.stopHoldSound();
         soundUtils.playFinishSound();
         onFinished();
+      } else {
+        fillAnimationRef.current = requestAnimationFrame(animate);
       }
-    }, updateInterval);
+    };
+    
+    fillAnimationRef.current = requestAnimationFrame(animate);
   }, [filled, fillProgress, soundUtils, onPressStart, onPressEnd, onFinished, scaleControls]);
 
   const handlePressEnd = useCallback(() => {
@@ -94,16 +100,16 @@ const ExecutionButton: React.FC<ExecutionButtonProps> = ({
     
     if (!filled && fillAnimationRef.current) {
       // Stop animation and start decay
-      clearInterval(fillAnimationRef.current);
+      cancelAnimationFrame(fillAnimationRef.current);
       fillAnimationRef.current = null;
       soundUtils.stopHoldSound();
       
-      // Decay animation
+      // Decay animation using requestAnimationFrame
       const currentProgress = fillProgress;
       const decayDuration = currentProgress * 1000; // proportional decay
       const decayStart = Date.now();
       
-      const decayInterval = setInterval(() => {
+      const animateDecay = () => {
         const elapsed = Date.now() - decayStart;
         const decayProgress = Math.min(elapsed / decayDuration, 1);
         const newProgress = currentProgress * (1 - decayProgress);
@@ -111,10 +117,13 @@ const ExecutionButton: React.FC<ExecutionButtonProps> = ({
         setFillProgress(newProgress);
         
         if (decayProgress >= 1) {
-          clearInterval(decayInterval);
           setFillProgress(0);
+        } else {
+          requestAnimationFrame(animateDecay);
         }
-      }, 16);
+      };
+      
+      requestAnimationFrame(animateDecay);
     }
   }, [isPressed, filled, fillProgress, soundUtils, onPressEnd, scaleControls]);
 

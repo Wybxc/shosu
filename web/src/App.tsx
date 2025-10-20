@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Box, IconButton } from '@mui/material';
+import { Box, IconButton, Snackbar, Alert } from '@mui/material';
 import { Info as InfoIcon } from '@mui/icons-material';
 import { motion, useAnimation } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ import SoundUtils from './utils/SoundUtils';
 function App() {
   const { t } = useTranslation();
   const [showAboutModal, setShowAboutModal] = useState(false);
+  const [showTip, setShowTip] = useState(false);
   const aboutAlphaControls = useAnimation();
   const soundUtils = useMemo(() => new SoundUtils(), []);
 
@@ -17,9 +18,8 @@ function App() {
     // Show tip on first visit
     const tipShown = localStorage.getItem('tip_shown');
     if (!tipShown) {
-      // Show a toast-like notification
       setTimeout(() => {
-        alert(t('tipFromEma'));
+        setShowTip(true);
         localStorage.setItem('tip_shown', 'true');
       }, 500);
     }
@@ -28,7 +28,7 @@ function App() {
     return () => {
       soundUtils.release();
     };
-  }, [t, soundUtils]);
+  }, [soundUtils]);
 
   const handlePressStart = () => {
     aboutAlphaControls.start({ opacity: 0, transition: { duration: 0.1 } });
@@ -100,6 +100,26 @@ function App() {
         open={showAboutModal}
         onClose={() => setShowAboutModal(false)}
       />
+
+      {/* Tip Snackbar */}
+      <Snackbar
+        open={showTip}
+        autoHideDuration={6000}
+        onClose={() => setShowTip(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setShowTip(false)}
+          severity="info"
+          sx={{
+            width: '100%',
+            backgroundColor: '#4B0029',
+            color: 'white',
+          }}
+        >
+          {t('tipFromEma')}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
